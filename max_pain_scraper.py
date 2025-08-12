@@ -1,4 +1,4 @@
-
+#!/Users/okato/miniconda3/envs/work/bin/python
 import requests
 from bs4 import BeautifulSoup
 import datetime

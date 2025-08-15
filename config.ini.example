@@ -2,4 +2,4 @@
 stocks = AAPL, AMZN, GOOG, GOOGL, META, MSFT, NVDA, TSLA, PLTR
 
 [finnhub]
-api_key = d1pl7mhr01qu436fe1h0d1pl7mhr01qu436fe1hg
+api_key = YOUR_API_KEY_HERE

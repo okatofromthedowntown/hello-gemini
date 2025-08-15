@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import configparser
+import finnhub
 
 HISTORY_FILE = 'max_pain_history.json'
 
@@ -26,6 +27,13 @@ def get_max_pain(ticker, expiration_date):
     except requests.exceptions.RequestException as e:
         return f"Error fetching page: {e}"
 
+def get_current_price(ticker, finnhub_client):
+    try:
+        quote = finnhub_client.quote(ticker)
+        return quote['c']
+    except Exception as e:
+        return f"Error fetching current price for {ticker}: {e}"
+
 def load_previous_results():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as f:
@@ -41,9 +49,14 @@ if __name__ == "__main__":
     config.read('config.ini')
     stocks_str = config.get('watchlist', 'stocks', fallback='AAPL, AMZN, GOOG, GOOGL, META, MSFT, NVDA, TSLA')
     watchlist = [stock.strip() for stock in stocks_str.split(',')]
-    
-    # We can either calculate the next Friday or hardcode it if we know it.
-    # For this week, Friday is August 15, 2025
+
+    finnhub_api_key = os.environ.get('API_KEY') or config.get('finnhub', 'api_key', fallback=None)
+    if not finnhub_api_key:
+        print("Finnhub API key not found. Please set the API_KEY environment variable or add it to config.ini under the [finnhub] section.")
+        exit()
+
+    finnhub_client = finnhub.Client(api_key=finnhub_api_key)
+
     expiration_date = "2025-08-15" #get_next_friday()
     
     previous_results = load_previous_results()
@@ -54,21 +67,33 @@ if __name__ == "__main__":
     
     for ticker in watchlist:
         max_pain_price_str = get_max_pain(ticker, expiration_date)
-        print(f"{ticker}: {max_pain_price_str}")
+        current_price = get_current_price(ticker, finnhub_client)
         
+        print(f"{ticker}:")
+        print(f"  - Max Pain: {max_pain_price_str}")
+
+        max_pain_price = None
         if max_pain_price_str and "Error" not in max_pain_price_str and "not found" not in max_pain_price_str:
             try:
-                # Clean the string and convert to float
-                current_price = float(max_pain_price_str.replace('$', '').replace(',', ''))
-                current_results[ticker] = current_price
-                
-                if ticker in previous_results:
-                    previous_price = previous_results[ticker]
-                    difference = current_price - previous_price
-                    print(f"  - Previous: ${previous_price:,.2f}, Change: ${difference:,.2f}")
+                max_pain_price = float(max_pain_price_str.replace('$', '').replace(',', ''))
             except ValueError:
-                print(f"  - Could not parse price for {ticker}")
+                print(f"  - Could not parse max pain price for {ticker}")
 
+        if isinstance(current_price, float):
+            if max_pain_price is not None:
+                price_difference = current_price - max_pain_price
+                print(f"  - Current Price: ${current_price:,.2f} (${price_difference:,.2f})")
+            else:
+                print(f"  - Current Price: ${current_price:,.2f}")
+        else:
+            print(f"  - Current Price: {current_price}")
+
+        if max_pain_price is not None:
+            current_results[ticker] = max_pain_price
+            if ticker in previous_results:
+                previous_price = previous_results[ticker]
+                difference = max_pain_price - previous_price
+                print(f"  - Previous Max Pain: ${previous_price:,.2f}, Change: ${difference:,.2f}")
 
     if current_results:
         save_results(current_results)

@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import datetime
 import json
 import os
+import configparser
 
 HISTORY_FILE = 'max_pain_history.json'
 
@@ -36,7 +37,10 @@ def save_results(results):
         json.dump(results, f, indent=4)
 
 if __name__ == "__main__":
-    magnificent_seven = ["AAPL", "AMZN", "GOOG", "GOOGL", "META", "MSFT", "NVDA", "TSLA"]
+    config = configparser.ConfigParser()
+    config.read('watchlist.ini')
+    stocks_str = config.get('watchlist', 'stocks', fallback='AAPL, AMZN, GOOG, GOOGL, META, MSFT, NVDA, TSLA')
+    watchlist = [stock.strip() for stock in stocks_str.split(',')]
     
     # We can either calculate the next Friday or hardcode it if we know it.
     # For this week, Friday is August 15, 2025
@@ -48,7 +52,7 @@ if __name__ == "__main__":
     print(f"Fetching Max Pain prices for options expiring on {expiration_date}")
     print("-" * 30)
     
-    for ticker in magnificent_seven:
+    for ticker in watchlist:
         max_pain_price_str = get_max_pain(ticker, expiration_date)
         print(f"{ticker}: {max_pain_price_str}")
         

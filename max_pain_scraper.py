@@ -38,7 +38,7 @@ def save_results(results):
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('watchlist.ini')
+    config.read('config.ini')
     stocks_str = config.get('watchlist', 'stocks', fallback='AAPL, AMZN, GOOG, GOOGL, META, MSFT, NVDA, TSLA')
     watchlist = [stock.strip() for stock in stocks_str.split(',')]
     

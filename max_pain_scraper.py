@@ -44,6 +44,12 @@ def save_results(results):
     with open(HISTORY_FILE, 'w') as f:
         json.dump(results, f, indent=4)
 
+def get_next_friday():
+    today = datetime.date.today()
+    days_until_friday = (4 - today.weekday() + 7) % 7
+    next_friday = today + datetime.timedelta(days=days_until_friday)
+    return next_friday.strftime("%Y-%m-%d")
+
 if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -57,7 +63,7 @@ if __name__ == "__main__":
 
     finnhub_client = finnhub.Client(api_key=finnhub_api_key)
 
-    expiration_date = "2025-08-15" #get_next_friday()
+    expiration_date = get_next_friday()
     
     previous_results = load_previous_results()
     current_results = {}
